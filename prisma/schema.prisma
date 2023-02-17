@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ContentCategory {
+  id    Int    @id @default(autoincrement())
+  order Int
+  name  String
+
+  summary ContentSummary[] // 릴레이션 관계를 나타내는 용도. 실제 칼럼으로 마이그레이션 되지 않는다.
+}
+
+model ContentSummary {
+  id                     Int       @id @default(autoincrement())
+  order                  Int
+  title                  String
+  registrationDate       DateTime
+  modificationDate       DateTime?
+  representativeImageURI String?
+  firstParagraph         String?   @db.VarChar(400)
+
+  category   ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade) // 릴레이션 관계를 나타냄(참조값). 실제 칼럼으로 마이그레이션 되지 않는다.
+  categoryId Int // FK 가 되는 부분
+
+  contentData ContentData? // 릴레이션 관계를 나타내는 용도. 실제 칼럼으로 마이그레이션 되지 않는다.
+}
+
+model ContentData {
+  id          Int    @id @default(autoincrement())
+  contentText String @db.Text
+
+  contentSummary   ContentSummary @relation(fields: [contentSummaryId], references: [id], onDelete: Cascade)
+  // 릴레이션 관계를 나타내는 용도(참조값). 실제 칼럼으로 마이그레이션 되지 않는다. 릴레이션을 명시하는 쪽(참조하는쪽)은 optional(:?)이면 안된다.
+  contentSummaryId Int            @unique // FK가 되는 부분
+}
+
+// ContentData 는 ContentSummary 를 참조하고, ContentSummary 는 ContentCategory 를 참조한다. >> 카테고리가 없으면 서머리가 있을 수 없고, 서머리가 없으면 데이터도 있을 수 없다.
